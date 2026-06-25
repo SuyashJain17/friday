@@ -1,42 +1,81 @@
 import { tavily } from '@tavily/core'
 import express from "express";
 import z from "zod"
-import { Output, streamText } from 'ai';
+import { streamText } from 'ai';
 import { openai } from '@ai-sdk/openai';
 import { PROMPT_TEMPLATE, SYSTEM_PROMPT } from './prompt';
+import { middleware } from './middleware';
+import cors from "cors";
+import { prisma } from './db';
+
 const client = tavily({ apiKey: process.env.TAVILY_API_KEY });
 const app = express();
 
 app.use(express.json());
+app.use(cors());
 
-//signup
-app.post("/signup", async (req, res) => {
+// Get all conversations for the authenticated user
+app.get("/conversations", middleware, async (req, res) => {
+    try {
+        const conversations = await prisma.conversation.findMany({
+            where: { userId: req.userId! },
+            orderBy: { id: "desc" },
+            select: {
+                id: true,
+                title: true,
+                slug: true,
+                messages: {
+                    take: 1,
+                    orderBy: { createdAt: "asc" },
+                    select: { content: true, createdAt: true }
+                }
+            }
+        });
 
+        res.json({ conversations });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Failed to fetch conversations" });
+    }
 })
 
-//signin
-app.post("/signin", async (req, res) => {
+// Get messages for a specific conversation
+app.get("/conversations/:conversationId", middleware, async (req, res) => {
+    try {
+        const conversationId = req.params.conversationId as string;
 
+        const conversation = await prisma.conversation.findFirst({
+            where: {
+                id: conversationId,
+                userId: req.userId!,
+            },
+            include: {
+                messages: {
+                    orderBy: { createdAt: "asc" }
+                }
+            }
+        });
+
+        if (!conversation) {
+            res.status(404).json({ error: "Conversation not found" });
+            return;
+        }
+
+        res.json({ conversation });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Failed to fetch conversation" });
+    }
 })
 
-// Past conversation get
-app.get("/conversations", async (req, res) => {
 
-})
+app.post("/friday_ask", middleware, async (req, res) => {
+    const requestSchema = z.object({
+        query: z.string({
+            message: "query must be a string and is required"
+        })
+    });
 
-// Past conversation get
-app.post("/conversations/:conversationId", async (req, res) => {
-
-})
-
-const requestSchema = z.object({
-    query: z.string({
-        required_error: "query is required",
-        invalid_type_error: "query must be a string"
-    })
-});
-
-app.post("/perplexity_ask", async (req, res) => {
     if (!req.body) {
         res.status(400).json({ error: "Request body is missing. Make sure you send JSON with 'Content-Type: application/json' header." });
         return;
@@ -50,23 +89,41 @@ app.post("/perplexity_ask", async (req, res) => {
 
     // Step 1 - get the query from the user
     const { query } = parseResult.data;
-    // Step 2 - make sure user has access/credits to hit the endpoint 
 
-    // Step 3 - check if we have web search indexed for a similar query 
+    // Step 2 - create a conversation and persist the user message
+    const slug = query
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .slice(0, 80);
 
-    // Step 4 - web search to gather resources
+    const conversation = await prisma.conversation.create({
+        data: {
+            title: query.slice(0, 200),
+            slug,
+            userId: req.userId!,
+            messages: {
+                create: {
+                    content: query,
+                    role: "User",
+                }
+            }
+        }
+    });
+
+    // Step 3 - web search to gather resources
     const webSearchResponse = await client.search(query, {
         searchDepth: "advanced"
     });
 
     const webSearchResult = webSearchResponse.results;
-    // Step 5 - do some context engg on the prompt + web search responses
 
-    // Step 6 - hit the LLM and stream back the response
+    // Step 4 - do context engineering on the prompt + web search responses
     const prompt = PROMPT_TEMPLATE
         .replace("{{WEB_SEARCH_RESULTS}}", JSON.stringify(webSearchResult))
         .replace("{{USER_QUERY}}", query);
 
+    // Step 5 - hit the LLM and stream back the response
     const result = await streamText({
         model: openai('gpt-4o'),
         prompt: prompt,
@@ -75,25 +132,132 @@ app.post("/perplexity_ask", async (req, res) => {
 
     res.header('Cache-Control', 'no-cache')
     res.header('Content-Type', 'text/event-stream')
+
+    let fullResponse = "";
     for await (const textPart of result.textStream) {
+        fullResponse += textPart;
         res.write(textPart);
     }
 
+    // Step 6 - persist the assistant's response
+    await prisma.message.create({
+        data: {
+            content: fullResponse,
+            role: "Assistance",
+            conversationId: conversation.id,
+        }
+    });
+
     res.write("\n<SOURCES>\n");
 
-    // Step 7 - also stream back the sources and follow up questions (which we can get from another parallel LLM call)
-    res.write(JSON.stringify(webSearchResult.map(result => ({ url: result.url }))));
+    // Step 7 - stream back the sources
+    res.write(JSON.stringify(webSearchResult.map(r => ({ url: r.url, title: r.title }))));
 
     res.write("\n<SOURCES>\n");
-    // Step 8 - close the event stream 
+
+    // Step 8 - send the conversation id so the frontend can use it for follow-ups
+    res.write("\n<CONVERSATION_ID>\n");
+    res.write(conversation.id);
+    res.write("\n<CONVERSATION_ID>\n");
+
+    // Step 9 - close the event stream
     res.end()
 })
 
-app.post("/perplexity_ask/follow_up", async (req, res) => {
-    // Step 1- get the existing chat from the db,
-    // Step 2- Forward the full history to the LLM 
-    // Step 2.5 - TODO: - Do context engg here.
-    // Step 3- Stream the response to the user.  
+app.post("/friday_ask/follow_up", middleware, async (req, res) => {
+    const requestSchema = z.object({
+        query: z.string({ message: "query is required" }),
+        conversationId: z.string({ message: "conversationId is required" }),
+    });
+
+    if (!req.body) {
+        res.status(400).json({ error: "Request body is missing." });
+        return;
+    }
+
+    const parseResult = requestSchema.safeParse(req.body);
+    if (!parseResult.success) {
+        res.status(400).json({ error: parseResult.error.format() });
+        return;
+    }
+
+    const { query, conversationId } = parseResult.data;
+
+    // Step 1 - get the existing conversation and its messages from the db
+    const conversation = await prisma.conversation.findFirst({
+        where: {
+            id: conversationId,
+            userId: req.userId!,
+        },
+        include: {
+            messages: {
+                orderBy: { createdAt: "asc" }
+            }
+        }
+    });
+
+    if (!conversation) {
+        res.status(404).json({ error: "Conversation not found" });
+        return;
+    }
+
+    // Step 2 - persist the new user message
+    await prisma.message.create({
+        data: {
+            content: query,
+            role: "User",
+            conversationId,
+        }
+    });
+
+    // Step 3 - do a fresh web search for the follow-up query
+    const webSearchResponse = await client.search(query, {
+        searchDepth: "advanced"
+    });
+    const webSearchResult = webSearchResponse.results;
+
+    // Step 4 - build conversation history for context
+    const chatHistory = conversation.messages
+        .map(m => `${m.role === "User" ? "User" : "Assistant"}: ${m.content}`)
+        .join("\n\n");
+
+    const prompt = PROMPT_TEMPLATE
+        .replace("{{WEB_SEARCH_RESULTS}}", JSON.stringify(webSearchResult))
+        .replace("{{USER_QUERY}}", `## Conversation History\n${chatHistory}\n\n## Follow-up Question\n${query}`);
+
+    // Step 5 - hit the LLM and stream the response
+    const result = await streamText({
+        model: openai('gpt-4o'),
+        prompt: prompt,
+        system: SYSTEM_PROMPT,
+    });
+
+    res.header('Cache-Control', 'no-cache')
+    res.header('Content-Type', 'text/event-stream')
+
+    let fullResponse = "";
+    for await (const textPart of result.textStream) {
+        fullResponse += textPart;
+        res.write(textPart);
+    }
+
+    // Step 6 - persist the assistant's response
+    await prisma.message.create({
+        data: {
+            content: fullResponse,
+            role: "Assistance",
+            conversationId,
+        }
+    });
+
+    res.write("\n<SOURCES>\n");
+    res.write(JSON.stringify(webSearchResult.map(r => ({ url: r.url, title: r.title }))));
+    res.write("\n<SOURCES>\n");
+
+    // Step 7 - close the stream
+    res.end()
 })
 
-app.listen(3000);
+app.listen(3001, () => {
+    console.log("Server running on http://localhost:3001");
+});
