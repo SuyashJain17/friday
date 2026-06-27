@@ -2,11 +2,18 @@ import { tavily } from '@tavily/core'
 import express from "express";
 import z from "zod"
 import { streamText } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { PROMPT_TEMPLATE, SYSTEM_PROMPT } from './prompt';
 import { middleware } from './middleware';
 import cors from "cors";
 import { prisma } from './db';
+
+// Configure OpenAI provider, using Vercel AI Gateway if key is present
+const openaiProvider = createOpenAI({
+    apiKey: process.env.AI_GATEWAY_API_KEY || process.env.OPENAI_API_KEY,
+    ...(process.env.AI_GATEWAY_API_KEY ? { baseURL: 'https://ai-gateway.vercel.sh/v1' } : {})
+});
+const openaiModel = openaiProvider('gpt-4o');
 
 const client = tavily({ apiKey: process.env.TAVILY_API_KEY });
 const app = express();
@@ -125,7 +132,7 @@ app.post("/friday_ask", middleware, async (req, res) => {
 
     // Step 5 - hit the LLM and stream back the response
     const result = await streamText({
-        model: openai('gpt-4o'),
+        model: openaiModel,
         prompt: prompt,
         system: SYSTEM_PROMPT,
     });
@@ -227,7 +234,7 @@ app.post("/friday_ask/follow_up", middleware, async (req, res) => {
 
     // Step 5 - hit the LLM and stream the response
     const result = await streamText({
-        model: openai('gpt-4o'),
+        model: openaiModel,
         prompt: prompt,
         system: SYSTEM_PROMPT,
     });
@@ -257,6 +264,82 @@ app.post("/friday_ask/follow_up", middleware, async (req, res) => {
     // Step 7 - close the stream
     res.end()
 })
+
+// Delete a conversation and its messages
+app.delete("/conversations/:conversationId", middleware, async (req, res) => {
+    try {
+        const conversationId = req.params.conversationId as string;
+
+        // Verify the conversation belongs to the user first
+        const conversation = await prisma.conversation.findFirst({
+            where: {
+                id: conversationId,
+                userId: req.userId!,
+            }
+        });
+
+        if (!conversation) {
+            res.status(404).json({ error: "Conversation not found" });
+            return;
+        }
+
+        // Delete all messages in the conversation
+        await prisma.message.deleteMany({
+            where: { conversationId }
+        });
+
+        // Delete the conversation
+        await prisma.conversation.delete({
+            where: { id: conversationId }
+        });
+
+        res.json({ success: true });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Failed to delete conversation" });
+    }
+});
+
+// Export conversation as plain text
+app.get("/conversations/:conversationId/export", middleware, async (req, res) => {
+    try {
+        const conversationId = req.params.conversationId as string;
+
+        const conversation = await prisma.conversation.findFirst({
+            where: {
+                id: conversationId,
+                userId: req.userId!,
+            },
+            include: {
+                messages: {
+                    orderBy: { createdAt: "asc" }
+                }
+            }
+        });
+
+        if (!conversation) {
+            res.status(404).json({ error: "Conversation not found" });
+            return;
+        }
+
+        let exportText = `Friday Conversation Export\n`;
+        exportText += `Title: ${conversation.title || 'Untitled Search'}\n`;
+        exportText += `Date: ${conversation.messages[0]?.createdAt.toLocaleDateString() || ''}\n`;
+        exportText += `========================================\n\n`;
+
+        for (const msg of conversation.messages) {
+            exportText += `${msg.role === 'User' ? 'You' : 'Friday'}:\n${msg.content}\n\n`;
+            exportText += `----------------------------------------\n\n`;
+        }
+
+        res.setHeader('Content-Type', 'text/plain');
+        res.setHeader('Content-Disposition', `attachment; filename="conversation-${conversationId}.txt"`);
+        res.send(exportText);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Failed to export conversation" });
+    }
+});
 
 app.listen(3001, () => {
     console.log("Server running on http://localhost:3001");
