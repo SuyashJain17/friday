@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { Brain, Menu, Plus, X } from 'lucide-react'
 import { Sidebar } from './Sidebar'
+import { MetaballBackground } from './MetaballBackground'
+import { FridayLogo } from './FridayLogo'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -17,19 +19,25 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   // Don't render sidebar shell on auth page
   if (pathname === '/auth') {
-    return <>{children}</>
+    return (
+      <>
+        <MetaballBackground />
+        {children}
+      </>
+    )
   }
 
   return (
-    <div className="flex h-screen w-full bg-[#090909] text-foreground overflow-hidden font-sans">
+    <div className="flex h-screen w-full bg-transparent text-foreground overflow-hidden font-sans relative">
+      <MetaballBackground />
       {/* Desktop Persistent Sidebar */}
       <div className="hidden lg:block h-full shrink-0 z-30 relative">
         <Sidebar />
       </div>
 
       {/* Mobile Top Header */}
-      <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-[#1E1E1E] bg-[#0C0C0C] shrink-0 z-20">
+      <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden relative z-10">
+        <header className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-[#1E1E1E] bg-[#0C0C0C]/80 backdrop-blur-md shrink-0 z-20">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMobileOpen(true)}
@@ -40,7 +48,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             </button>
 
             <Link href="/" className="flex items-center gap-2">
-              <Brain className="w-5 h-5 text-primary" />
+              <FridayLogo className="w-5 h-5" />
               <span className="font-mono font-bold text-base text-foreground">Friday</span>
             </Link>
           </div>
@@ -78,7 +86,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         )}
 
         {/* Main Application Viewport */}
-        <main className="flex-1 min-w-0 h-full overflow-y-auto relative flex flex-col bg-[#0A0A0A]">
+        <main className="flex-1 min-w-0 h-full overflow-y-auto relative flex flex-col bg-transparent">
           {children}
         </main>
       </div>
