@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Brain, Mail, Lock, User, ArrowRight } from 'lucide-react'
+import { FridayLogo } from '@/components/FridayLogo'
 
 export default function AuthPage() {
   const router = useRouter()
@@ -82,16 +83,12 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col justify-center items-center px-4 relative overflow-hidden font-sans">
-      {/* Decorative ambient background highlights */}
-      <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-gradient-to-br from-primary/10 to-accent/5 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-gradient-to-br from-accent/10 to-primary/5 blur-[120px] pointer-events-none" />
-
+    <div className="min-h-screen bg-transparent flex flex-col justify-center items-center px-4 relative overflow-hidden font-sans">
       <div className="w-full max-w-md z-10 space-y-8 animate-in">
         {/* Logo Header */}
         <div className="flex flex-col items-center text-center space-y-3">
           <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/10 border border-primary/20 shadow-inner">
-            <Brain className="w-8 h-8 text-primary animate-pulse" />
+            <FridayLogo className="w-8 h-8 animate-pulse" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
             Friday

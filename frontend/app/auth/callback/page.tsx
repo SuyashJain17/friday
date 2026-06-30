@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { FridayLogo } from '@/components/FridayLogo'
 
 export default function AuthCallback() {
   const router = useRouter()
@@ -35,8 +36,9 @@ export default function AuthCallback() {
   }, [router])
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center">
-      <span className="font-mono text-xs text-muted-foreground animate-pulse">completing sign in...</span>
+    <div className="min-h-screen bg-transparent flex flex-col items-center justify-center gap-4">
+      <FridayLogo className="w-10 h-10 animate-pulse" />
+      <span className="font-sans text-xs text-[#888]">Completing sign in...</span>
     </div>
   )
 }
