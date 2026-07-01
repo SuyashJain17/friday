@@ -35,7 +35,7 @@ export function ConversationCard({
       className="group relative"
     >
       <Link
-        href={`/conversation/${conversation.id}`}
+        href={`/search/${conversation.id}`}
         className="block p-4 rounded-xl border border-border/50 bg-card/50 hover:border-primary/50 hover:bg-card/80 transition-all h-full"
       >
         <div className="space-y-3 pr-10">

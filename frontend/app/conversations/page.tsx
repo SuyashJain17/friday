@@ -33,16 +33,8 @@ export default function ConversationsPage() {
     }
   }
 
-  if (isAuthLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <span className="font-mono text-xs text-muted-foreground animate-pulse">authenticating</span>
-      </div>
-    )
-  }
-
   return (
-    <div className="flex-1 flex flex-col min-h-full bg-[#0A0A0A] p-6 md:p-12">
+    <div className="flex-1 flex flex-col min-h-full bg-transparent p-6 md:p-12">
       {/* Content */}
       <div className="max-w-4xl w-full mx-auto space-y-8">
         <div>
@@ -50,8 +42,12 @@ export default function ConversationsPage() {
           <p className="text-sm font-light text-[#888] mt-1">Manage your search history and threads</p>
           <hr className="rule mt-6" />
         </div>
-        {isLoading && (
-          <p className="font-mono text-xs text-muted-foreground animate-pulse">loading...</p>
+        {(isLoading || isAuthLoading) && (
+          <div className="space-y-3 animate-pulse">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="h-16 bg-white/5 border border-white/10 rounded-xl w-full" />
+            ))}
+          </div>
         )}
 
         {!isLoading && conversations.length === 0 && (
@@ -81,7 +77,7 @@ export default function ConversationsPage() {
                 style={{ animationDelay: `${idx * 30}ms` }}
               >
                 <Link
-                  href={`/conversation/${convo.id}`}
+                  href={`/search/${convo.id}`}
                   className="flex-1 flex items-start justify-between px-4 py-4 gap-4"
                 >
                   {/* Index */}
@@ -108,27 +104,40 @@ export default function ConversationsPage() {
                 {/* Delete */}
                 <div className="pr-4 flex items-center opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                   {deleteConfirm === convo.id ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 bg-[#1f1f1f] px-2 py-1 rounded-lg border border-white/10 shadow-sm animate-in fade-in zoom-in-95 duration-150">
                       <button
-                        onClick={() => setDeleteConfirm(null)}
-                        className="font-mono text-[10px] uppercase text-muted-foreground hover:text-foreground"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          setDeleteConfirm(null)
+                        }}
+                        className="text-xs font-normal text-[#aaa] hover:text-white px-2 py-0.5 rounded hover:bg-white/10 transition-colors cursor-pointer"
                       >
                         Cancel
                       </button>
                       <button
-                        onClick={() => handleDelete(convo.id)}
-                        className="font-mono text-[10px] uppercase text-destructive hover:underline"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleDelete(convo.id)
+                        }}
+                        className="text-xs font-medium text-white bg-destructive hover:bg-destructive/90 px-2.5 py-0.5 rounded transition-colors shadow-sm cursor-pointer"
                       >
-                        Confirm
+                        Delete
                       </button>
                     </div>
                   ) : (
                     <button
-                      onClick={() => setDeleteConfirm(convo.id)}
-                      className="text-muted-foreground hover:text-destructive transition-colors"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setDeleteConfirm(convo.id)
+                      }}
+                      className="p-1.5 text-[#666] hover:text-destructive hover:bg-white/5 transition-colors rounded-lg cursor-pointer"
                       aria-label="Delete conversation"
+                      title="Delete conversation"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   )}
                 </div>
