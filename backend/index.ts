@@ -146,20 +146,19 @@ app.post("/friday_ask", middleware, async (req, res) => {
         res.write(textPart);
     }
 
-    // Step 6 - persist the assistant's response
+    const sourcesJson = JSON.stringify(webSearchResult.map(r => ({ url: r.url, title: r.title })));
+
+    // Step 6 - persist the assistant's response with sources
     await prisma.message.create({
         data: {
-            content: fullResponse,
+            content: fullResponse + `\n<SOURCES>\n${sourcesJson}\n<SOURCES>\n`,
             role: "Assistance",
             conversationId: conversation.id,
         }
     });
 
     res.write("\n<SOURCES>\n");
-
-    // Step 7 - stream back the sources
-    res.write(JSON.stringify(webSearchResult.map(r => ({ url: r.url, title: r.title }))));
-
+    res.write(sourcesJson);
     res.write("\n<SOURCES>\n");
 
     // Step 8 - send the conversation id so the frontend can use it for follow-ups
@@ -248,22 +247,59 @@ app.post("/friday_ask/follow_up", middleware, async (req, res) => {
         res.write(textPart);
     }
 
-    // Step 6 - persist the assistant's response
+    const sourcesJson = JSON.stringify(webSearchResult.map(r => ({ url: r.url, title: r.title })));
+
+    // Step 6 - persist the assistant's response with sources
     await prisma.message.create({
         data: {
-            content: fullResponse,
+            content: fullResponse + `\n<SOURCES>\n${sourcesJson}\n<SOURCES>\n`,
             role: "Assistance",
             conversationId,
         }
     });
 
     res.write("\n<SOURCES>\n");
-    res.write(JSON.stringify(webSearchResult.map(r => ({ url: r.url, title: r.title }))));
+    res.write(sourcesJson);
     res.write("\n<SOURCES>\n");
 
     // Step 7 - close the stream
     res.end()
 })
+
+// Update conversation title
+app.patch("/conversations/:conversationId", middleware, async (req, res) => {
+    try {
+        const conversationId = req.params.conversationId as string;
+        const { title } = req.body;
+
+        if (!title || typeof title !== 'string' || !title.trim()) {
+            res.status(400).json({ error: "Title is required" });
+            return;
+        }
+
+        const conversation = await prisma.conversation.findFirst({
+            where: {
+                id: conversationId,
+                userId: req.userId!,
+            }
+        });
+
+        if (!conversation) {
+            res.status(404).json({ error: "Conversation not found" });
+            return;
+        }
+
+        const updated = await prisma.conversation.update({
+            where: { id: conversationId },
+            data: { title: title.trim().slice(0, 200) }
+        });
+
+        res.json({ success: true, conversation: updated });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: "Failed to update conversation" });
+    }
+});
 
 // Delete a conversation and its messages
 app.delete("/conversations/:conversationId", middleware, async (req, res) => {

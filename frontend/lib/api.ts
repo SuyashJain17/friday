@@ -161,6 +161,33 @@ export async function* streamSearch({
 }
 
 /**
+ * Helper to extract sources and follow-ups from raw stored content
+ */
+function parseMessageMetadata(m: any) {
+  let sources = []
+  let followUps: string[] = []
+  if (m.content) {
+    const sourcesMatch = m.content.match(/<SOURCES>\s*([\s\S]*?)\s*<SOURCES>/)
+    if (sourcesMatch) {
+      try { sources = JSON.parse(sourcesMatch[1].trim()) } catch (e) {}
+    }
+    const followUpsMatch = m.content.match(/<FOLLOW_UPS>([\s\S]*?)(?:<\/FOLLOW_UPS>|$)/)
+    if (followUpsMatch) {
+      followUps = [...followUpsMatch[1].matchAll(/<question>\s*([\s\S]*?)\s*<\/question>/g)]
+        .map(match => match[1].trim())
+        .filter(Boolean)
+    }
+  }
+  return {
+    ...m,
+    role: m.role?.toLowerCase() === 'assistance' ? 'assistant' : 'user',
+    content: m.role?.toLowerCase() === 'assistance' ? cleanMessageContent(m.content) : m.content,
+    sources: sources.length > 0 ? sources : undefined,
+    followUps: followUps.length > 0 ? followUps : undefined,
+  }
+}
+
+/**
  * Fetch all conversations for the current user
  */
 export async function fetchConversations() {
@@ -170,18 +197,16 @@ export async function fetchConversations() {
     if (Array.isArray(conversations)) {
       return conversations.map((convo: any) => {
         if (Array.isArray(convo.messages)) {
-          convo.messages = convo.messages.map((m: any) => ({
-            ...m,
-            role: m.role?.toLowerCase() === 'assistance' ? 'assistant' : 'user',
-            content: m.role?.toLowerCase() === 'assistance' ? cleanMessageContent(m.content) : m.content,
-          }))
+          convo.messages = convo.messages.map(parseMessageMetadata)
         }
         return convo
       })
     }
     return []
-  } catch (error) {
-    console.error('Failed to fetch conversations:', error)
+  } catch (error: any) {
+    if (error?.code !== 'ERR_NETWORK' && error?.message !== 'Network Error') {
+      console.error('Failed to fetch conversations:', error)
+    }
     return []
   }
 }
@@ -194,15 +219,13 @@ export async function fetchConversation(id: string) {
     const response = await apiClient.get(`/conversations/${id}`)
     const conversation = response.data?.conversation
     if (conversation && Array.isArray(conversation.messages)) {
-      conversation.messages = conversation.messages.map((m: any) => ({
-        ...m,
-        role: m.role?.toLowerCase() === 'assistance' ? 'assistant' : 'user',
-        content: m.role?.toLowerCase() === 'assistance' ? cleanMessageContent(m.content) : m.content,
-      }))
+      conversation.messages = conversation.messages.map(parseMessageMetadata)
     }
     return conversation
-  } catch (error) {
-    console.error('Failed to fetch conversation:', error)
+  } catch (error: any) {
+    if (error?.code !== 'ERR_NETWORK' && error?.message !== 'Network Error') {
+      console.error('Failed to fetch conversation:', error)
+    }
     return null
   }
 }
@@ -214,8 +237,25 @@ export async function deleteConversation(id: string) {
   try {
     await apiClient.delete(`/conversations/${id}`)
     return true
-  } catch (error) {
-    console.error('Failed to delete conversation:', error)
+  } catch (error: any) {
+    if (error?.code !== 'ERR_NETWORK' && error?.message !== 'Network Error') {
+      console.error('Failed to delete conversation:', error)
+    }
+    return false
+  }
+}
+
+/**
+ * Rename a conversation title
+ */
+export async function renameConversation(id: string, title: string) {
+  try {
+    const response = await apiClient.patch(`/conversations/${id}`, { title })
+    return response.data?.conversation || true
+  } catch (error: any) {
+    if (error?.code !== 'ERR_NETWORK' && error?.message !== 'Network Error') {
+      console.error('Failed to rename conversation:', error)
+    }
     return false
   }
 }
@@ -229,8 +269,10 @@ export async function exportConversation(id: string) {
       responseType: 'blob',
     })
     return response.data
-  } catch (error) {
-    console.error('Failed to export conversation:', error)
+  } catch (error: any) {
+    if (error?.code !== 'ERR_NETWORK' && error?.message !== 'Network Error') {
+      console.error('Failed to export conversation:', error)
+    }
     return null
   }
 }

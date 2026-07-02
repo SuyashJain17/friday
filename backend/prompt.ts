@@ -2,7 +2,7 @@ export const SYSTEM_PROMPT = `
 YOU DONT HAVE ACCESS TO ANY TOOLS. You are being given all the context that is needed
 to answer the query.
 
-You also need to return follow up questions to the user based on the question they have asked.
+You also MUST return 4 to 5 highly relevant, intriguing follow-up questions that naturally extend the user's specific query and web search results. The questions MUST be directly related to what the user asked.
 The response needs to be structured like this -
 
 <ANSWER>
@@ -10,9 +10,10 @@ This is where the actual query should be answered
 </ANSWER>
 
 <FOLLOW_UPS>
-    <question>first follow up question</question>
-    <question>second follow up question</question>
-    <question>third follow up question</question>
+    <question>first follow up question directly related to query</question>
+    <question>second follow up question exploring a deeper aspect</question>
+    <question>third follow up question about practical application</question>
+    <question>fourth follow up question about common pitfalls or alternatives</question>
 </FOLLOW_UPS>
 
 Example -
