@@ -48,33 +48,33 @@ export function ResponseStream({ content, isLoading = false }: ResponseStreamPro
           </button>
 
           {/* Prose */}
-          <div className="text-foreground space-y-4">
+          <div className="text-white space-y-4 font-serif">
             <Markdown
               components={{
                 h1: ({ node, ...props }) => (
-                  <h1 className="text-2xl font-bold mt-8 mb-3 text-foreground tracking-tight" {...props} />
+                  <h1 className="text-xl md:text-2xl font-bold mt-8 mb-3 text-white tracking-tight font-serif border-b border-white/15 pb-2" {...props} />
                 ),
                 h2: ({ node, ...props }) => (
-                  <h2 className="text-xl font-semibold mt-6 mb-2 text-foreground tracking-tight" {...props} />
+                  <h2 className="text-lg md:text-xl font-bold mt-6 mb-2 text-primary tracking-tight font-serif" {...props} />
                 ),
                 h3: ({ node, ...props }) => (
-                  <h3 className="text-base font-semibold mt-5 mb-2 text-foreground" {...props} />
+                  <h3 className="text-base md:text-lg font-semibold mt-5 mb-2 text-white font-serif" {...props} />
                 ),
                 p: ({ node, ...props }) => (
-                  <p className="text-base font-light leading-7 text-foreground mb-4" {...props} />
+                  <p className="text-[15px] md:text-[16px] font-normal leading-7 text-white tracking-normal mb-5 font-serif" {...props} />
                 ),
                 ul: ({ node, ...props }) => (
-                  <ul className="space-y-1.5 mb-4 pl-4" {...props} />
+                  <ul className="space-y-2.5 mb-5 pl-5 list-disc marker:text-primary font-serif" {...props} />
                 ),
                 ol: ({ node, ...props }) => (
-                  <ol className="space-y-1.5 mb-4 pl-4 list-decimal" {...props} />
+                  <ol className="space-y-2.5 mb-5 pl-5 list-decimal marker:text-primary font-medium font-serif" {...props} />
                 ),
                 li: ({ node, ...props }) => (
-                  <li className="text-base font-light leading-7 text-foreground" {...props} />
+                  <li className="text-[15px] md:text-[16px] font-normal leading-7 text-white tracking-normal pl-1 font-serif" {...props} />
                 ),
                 blockquote: ({ node, ...props }) => (
                   <blockquote
-                    className="border-l-2 border-primary pl-4 py-1 my-4 text-muted-foreground italic font-light"
+                    className="border-l-4 border-primary bg-white/5 pl-4 py-2.5 my-5 rounded-r-xl text-[#ddd] italic font-normal text-[15px] md:text-[16px] font-serif"
                     {...props}
                   />
                 ),
@@ -94,7 +94,7 @@ export function ResponseStream({ content, isLoading = false }: ResponseStreamPro
                           'code[class*="language-"]': { background: 'transparent', color: '#EBEBEB', fontSize: '13px', fontFamily: 'var(--font-mono)' },
                           'pre[class*="language-"]': { background: 'transparent', margin: 0, padding: '16px' },
                           '.token.comment': { color: '#555555' },
-                          '.token.keyword': { color: '#5EEAD4' },
+                          '.token.keyword': { color: 'var(--primary)' },
                           '.token.string': { color: '#F59E0B' },
                           '.token.number': { color: '#EBEBEB' },
                           '.token.operator': { color: '#EBEBEB' },
