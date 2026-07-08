@@ -251,7 +251,7 @@ export default function SearchConversationPage() {
 
         {/* Right Column: Compact scrollable sources panel like Perplexity */}
         {activeSources.length > 0 && (
-          <div className="w-full lg:w-[310px] shrink-0 lg:sticky lg:top-24 lg:ml-auto">
+          <div className="w-full lg:w-[310px] shrink-0 lg:sticky lg:top-24 lg:ml-auto lg:-translate-x-5 lg:-translate-y-2.5">
             <SourcesList sources={activeSources} isLoading={isStreaming} layout="sidebar" />
           </div>
         )}
