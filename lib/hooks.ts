@@ -92,6 +92,26 @@ export function useAuthCheck() {
       (window.location.hash.includes('access_token=') || window.location.hash.includes('refresh_token='))
 
     const checkAuth = async () => {
+      if (hasAuthHash && typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
+        const hash = window.location.hash.substring(1)
+        const params = new URLSearchParams(hash)
+        const accessToken = params.get('access_token')
+        const refreshToken = params.get('refresh_token') || ''
+        if (accessToken) {
+          const { data: { session }, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+          if (session && !error) {
+            localStorage.setItem('authToken', session.access_token)
+            setIsAuthenticated(true)
+            setIsLoading(false)
+            window.history.replaceState(null, '', window.location.pathname + window.location.search)
+            return
+          }
+        }
+      }
+
       const { data: { session } } = await supabase.auth.getSession()
       if (!session && !hasAuthHash) {
         localStorage.removeItem('authToken')

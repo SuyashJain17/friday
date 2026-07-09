@@ -10,6 +10,24 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const handleCallback = async () => {
+      if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
+        const hash = window.location.hash.substring(1)
+        const params = new URLSearchParams(hash)
+        const accessToken = params.get('access_token')
+        const refreshToken = params.get('refresh_token') || ''
+        if (accessToken) {
+          const { data: { session }, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+          if (session && !error) {
+            localStorage.setItem('authToken', session.access_token)
+            router.push('/')
+            return
+          }
+        }
+      }
+
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
         localStorage.setItem('authToken', session.access_token)
