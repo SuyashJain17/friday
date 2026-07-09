@@ -6,21 +6,17 @@ Friday is an AI-powered conversational search engine inspired by Perplexity AI. 
 
 ## 🛠️ Tech Stack
 
-Friday is built on a modern, fast, type-safe stack:
+Friday is built as a unified, full-stack **Next.js 16** application running on Vercel and Edge-compatible runtimes:
 
-### Frontend
-- **Framework:** React 19 (Vite / Bun-integrated bundler)
-- **Styling:** Tailwind CSS, Shadcn UI / Radix UI
-- **State & Routing:** React Router v8, Axios
-- **Auth:** Supabase Auth (SSR integration + Social Providers)
-
-### Backend
-- **Runtime:** [Bun](https://bun.sh/) (Fast, all-in-one JavaScript runtime)
-- **Server:** Express 5 (with native TypeScript support)
-- **ORM:** Prisma ORM 7.8 (PostgreSQL adapter)
-- **Database:** Supabase PostgreSQL (Managed DB with connection pooling)
+### Full-Stack Architecture (Next.js App Router)
+- **Framework:** Next.js 16 (App Router + React 19)
+- **Runtime & Bundler:** [Bun](https://bun.sh/) / Node.js (Vercel Edge & Serverless compatible)
+- **Styling:** Tailwind CSS 4, Shadcn UI / Radix UI, Framer Motion
+- **ORM:** Prisma ORM 7.8 (`@prisma/adapter-pg` PostgreSQL adapter with custom generated client)
+- **Database:** Supabase PostgreSQL (Managed DB with connection pooling & pgBouncer)
 - **Search Engine:** Tavily Search AI (Real-time advanced web search and scraping)
-- **LLM Orchestration:** Vercel AI SDK (`ai` & `@ai-sdk/openai` running GPT-4o)
+- **LLM Orchestration:** Vercel AI SDK (`ai` & `@ai-sdk/openai` running GPT-4o via Web Streams API)
+- **Auth:** Supabase Auth (JWT verification & auto user persistence)
 
 ---
 
@@ -28,34 +24,36 @@ Friday is built on a modern, fast, type-safe stack:
 
 ```text
 friday/
-├── backend/                  # Express API Server
-│   ├── generated/            # Automatically generated Prisma Client (ignored by git)
-│   ├── prisma/
-│   │   ├── migrations/       # Database schema migrations
-│   │   └── schema.prisma     # Prisma data models
-│   ├── client.ts             # Supabase Admin/Client setup
-│   ├── db.ts                 # Database instance connection (Prisma Client)
-│   ├── index.ts              # Express server and search endpoints
-│   ├── middleware.ts         # Supabase Auth verification & Auto User Sync
-│   ├── prompt.ts             # LLM prompt templates & System prompts
-│   └── tsconfig.json         # Backend TS Config
-│
-└── frontend/                 # React UI Application
-    ├── src/
-    │   ├── components/       # Reusable UI components
-    │   ├── lib/              # API clients & configuration (Supabase, API URLs)
-    │   ├── pages/            # App pages (Dashboard, Auth, etc.)
-    │   ├── App.tsx           # Router and Navigation
-    │   ├── frontend.tsx      # DOM Entrypoint
-    │   └── index.ts          # SPA serve and HMR dev server (Bun-based)
-    └── package.json          # Frontend build scripts & dependencies
+├── app/                          # Next.js App Router Pages & API Route Handlers
+│   ├── api/
+│   │   ├── ask/                  # POST /api/ask — AI streaming endpoint (Web Streams API)
+│   │   ├── conversations/        # GET /api/conversations, GET/PATCH/DELETE [id], export
+│   │   └── followups/            # POST /api/followups — Contextual follow-up streaming
+│   ├── auth/                     # Authentication & Callback routes
+│   ├── conversation/[id]/        # Historical conversation view
+│   ├── search/[id]/              # Active search view
+│   ├── globals.css               # Global Tailwind CSS & custom design tokens
+│   └── layout.tsx                # Global App Layout
+├── components/                   # Reusable UI components (SearchBar, Sidebar, MetaballBackground)
+├── generated/                    # Automatically generated Prisma Client (`generated/client`)
+├── lib/
+│   ├── db/                       # Singleton Prisma DB connection instance
+│   ├── services/                 # Clean server service layer (auth, ai, conversation, search)
+│   ├── stream/                   # Web Streams API (`ReadableStream`) helper utilities
+│   └── api.ts                    # Axios API Client with TTL caching & request deduplication
+├── prisma/                       # Prisma schema & database migrations
+├── public/                       # Static public assets
+├── .env                          # Prisma CLI environment variables (Database & API Keys)
+├── .env.local                    # Next.js local development overrides
+├── package.json                  # Full-stack dependencies & build scripts
+└── README.md                     # Project documentation
 ```
 
 ---
 
 ## 💾 Database Schema
 
-The PostgreSQL database contains the following models managed via Prisma:
+The PostgreSQL database contains the following models managed via Prisma (`prisma/schema.prisma`):
 
 ```mermaid
 erDiagram
@@ -90,10 +88,18 @@ erDiagram
 
 ## ⚙️ Environment Variables
 
-Copy the environment keys to setup your credentials.
+Set up your credentials inside `.env` (loaded automatically by the Prisma CLI) and/or `.env.local` (loaded automatically by Next.js during local development):
 
-### Backend (`backend/.env`)
 ```env
+# Supabase Client & Service Keys
+NEXT_PUBLIC_SUPABASE_URL=https://[db_ref].supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_SUPABASE_URL=https://[db_ref].supabase.co
+VITE_SUPABASE_SECRET_KEY=your_supabase_service_role_key
+
+# API Target URL (Leave empty when deployed or running locally with internal App Router)
+NEXT_PUBLIC_API_URL=
+
 # Tavily API Search Key
 TAVILY_API_KEY=your_tavily_api_key
 
@@ -101,24 +107,12 @@ TAVILY_API_KEY=your_tavily_api_key
 AI_GATEWAY_API_KEY=your_openai_api_key
 
 # Database Connection (Supabase PostgreSQL)
-# Connection Pooling (Port 6543) used for transaction queries
 DATABASE_URL="postgresql://postgres.[db_ref]:[pass]@aws-1-ap-northeast-2.pooler.supabase.com:6543/postgres?pgbouncer=true"
-# Direct Connection (Port 5432) used for database migrations
 DIRECT_DATABASE_URL="postgresql://postgres.[db_ref]:[pass]@aws-1-ap-northeast-2.pooler.supabase.com:5432/postgres"
 
-# Auth Provider Configurations (Optional)
+# Optional GitHub OAuth
 GITHUB_OAUTH_CLIENT_ID=your_github_client_id
 GITHUB_OAUTH_CLIENT_SECRET=your_github_client_secret
-
-# Supabase Auth Keys
-VITE_SUPABASE_URL=https://[db_ref].supabase.co
-VITE_SUPABASE_SECRET_KEY=your_supabase_service_role_key
-```
-
-### Frontend (`frontend/.env`)
-```env
-VITE_SUPABASE_URL=https://[db_ref].supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
 ```
 
 ---
@@ -127,54 +121,60 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
 
 Ensure you have [Bun](https://bun.sh/) installed locally on your system.
 
-### 1. Database Setup
+### 1. Database & Prisma Setup
 
-1. Configure your database URLs in `backend/.env`.
-2. Inside `backend`, run the Prisma migration command to prepare your PostgreSQL DB schema:
+1. Configure your database URLs in `.env` or `.env.local`.
+2. Generate the custom Prisma Client (`generated/client`):
    ```bash
-   cd backend
-   bun --bun run prisma migrate dev
-   ```
-3. Run the generator to update the custom-compiled Prisma client in `backend/generated/`:
-   ```bash
-   bun --bun run prisma generate
+   bun run db:generate
    ```
 
-### 2. Start the Backend API Server
+### 2. Start the Application
 
-Start the Express API server (runs on port `3001` by default):
+Start the unified full-stack Next.js dev server on port `3000`:
 ```bash
-cd backend
-bun run index.ts
-```
-
-### 3. Start the Frontend Development Server
-
-Start the React SPA development server (runs with Hot Module Reloading):
-```bash
-cd frontend
 bun install
 bun dev
 ```
 
----
+### 3. Production Build & Verification
 
-## 📡 API Reference
-
-All requests must be authenticated. Include your Supabase Access Token (JWT) in the `Authorization` header.
-
-### 🔐 Auth Verification Header
-```http
-Authorization: <JWT_Token_From_Supabase>
+Verify full production readiness (`bun --bun run prisma generate && next build`):
+```bash
+bun run build
 ```
 
 ---
 
-### 1. New Search Query
+## ⚡ Performance & Caching Architecture
 
-Stream an AI answer based on real-time web search results.
+To ensure instantaneous typing responsiveness and minimal network overhead, Friday incorporates a specialized multi-layer optimization strategy:
 
-- **URL:** `/friday_ask`
+1. **Adaptive 3D Raymarching Throttling (`MetaballBackground`)**:
+   The interactive 3D metaball canvas dynamically detects when the user is typing into an `<input>` or `<textarea>` element (`document.activeElement`). While typing, raymarching loops throttle to ~15 FPS to yield 100% of main thread priority to UI rendering, instantly restoring buttery 60 FPS when typing stops. Max shader iterations are bounded and `pixelRatio` is capped at `1.25` for optimal GPU performance.
+2. **Client-Side Request Deduplication & TTL Caching (`lib/api.ts`)**:
+   `fetchConversations()` implements an in-memory `Promise` deduplication layer and a `5000ms` TTL cache. Simultaneous requests across sidebar and layout components share a single network call, eliminating database polling overhead while automatically invalidating on `deleteConversation` or `renameConversation`.
+3. **Database Bounding (`take: 50`)**:
+   Database queries to `getUserConversations` limit historical retrieval to the top 50 recent sessions, minimizing JSON serialization latency and serverless connection pool consumption.
+
+---
+
+## 📡 API Reference (`/api/*`)
+
+All internal requests are authenticated via Supabase JWT attached to the `Authorization` header by the frontend API interceptor (`lib/api.ts`).
+
+### 🔐 Auth Verification Header
+```http
+Authorization: Bearer <JWT_Token_From_Supabase>
+```
+
+---
+
+### 1. New Search Query (`POST /api/ask`)
+
+Streams an AI answer based on real-time web search results via standard Web Streams API.
+
+- **URL:** `/api/ask`
 - **Method:** `POST`
 - **Headers:** `Content-Type: application/json`
 - **Request Body:**
@@ -184,7 +184,7 @@ Stream an AI answer based on real-time web search results.
   }
   ```
 
-#### Response Format (Server-Sent Event / Text Stream)
+#### Response Format (`text/event-stream` / `ReadableStream`)
 1. **Raw Text:** Streams markdown chunks generated by GPT-4o.
 2. **Sources Tag:** Appended at the end of the text stream:
    ```text
@@ -201,11 +201,11 @@ Stream an AI answer based on real-time web search results.
 
 ---
 
-### 2. Follow-Up Query
+### 2. Follow-Up Query (`POST /api/followups`)
 
-Continue a search session by appending history context to the model prompt.
+Continues a search session by appending conversation history (`chatHistory`) to the prompt.
 
-- **URL:** `/friday_ask/follow_up`
+- **URL:** `/api/followups`
 - **Method:** `POST`
 - **Headers:** `Content-Type: application/json`
 - **Request Body:**
@@ -215,15 +215,15 @@ Continue a search session by appending history context to the model prompt.
     "conversationId": "550e8400-e29b-41d4-a716-446655440000"
   }
   ```
-- **Response Format:** Same streaming format with `<SOURCES>` blocks.
+- **Response Format:** Same streaming format with `<SOURCES>` blocks (closes cleanly after `<SOURCES>`).
 
 ---
 
-### 3. Get Conversations List
+### 3. Get Conversations List (`GET /api/conversations`)
 
-Fetch the list of previous conversations for the current authenticated user.
+Fetches the list of previous conversations for the current authenticated user.
 
-- **URL:** `/conversations`
+- **URL:** `/api/conversations`
 - **Method:** `GET`
 - **Success Response:** `200 OK`
   ```json
@@ -246,11 +246,11 @@ Fetch the list of previous conversations for the current authenticated user.
 
 ---
 
-### 4. Get Conversation Details
+### 4. Get Conversation Details (`GET /api/conversations/:id`)
 
-Fetch all messages for a specific conversation session.
+Fetches all messages for a specific conversation session.
 
-- **URL:** `/conversations/:conversationId`
+- **URL:** `/api/conversations/:id`
 - **Method:** `GET`
 - **Success Response:** `200 OK`
   ```json
@@ -281,3 +281,36 @@ Fetch all messages for a specific conversation session.
   ```
 
 ---
+
+### 5. Rename Conversation (`PATCH /api/conversations/:id`)
+
+Updates the title of an existing conversation.
+
+- **URL:** `/api/conversations/:id`
+- **Method:** `PATCH`
+- **Headers:** `Content-Type: application/json`
+- **Request Body:**
+  ```json
+  {
+    "title": "Learning Rust — Best Resources"
+  }
+  ```
+
+---
+
+### 6. Delete Conversation (`DELETE /api/conversations/:id`)
+
+Deletes a conversation and all its associated messages.
+
+- **URL:** `/api/conversations/:id`
+- **Method:** `DELETE`
+
+---
+
+### 7. Export Conversation (`GET /api/conversations/:id/export`)
+
+Downloads the full transcript of a conversation as a formatted `.txt` file.
+
+- **URL:** `/api/conversations/:id/export`
+- **Method:** `GET`
+- **Headers Returned:** `Content-Type: text/plain`, `Content-Disposition: attachment; filename="conversation-<id>.txt"`
