@@ -16,7 +16,7 @@ export default function AuthPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
-  // Redirect if already logged in
+  // Redirect if already logged in or when OAuth session initializes
   useEffect(() => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession()
@@ -26,6 +26,17 @@ export default function AuthPage() {
       }
     }
     checkUser()
+
+    const { data: authStateListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        localStorage.setItem('authToken', session.access_token)
+        router.push('/')
+      }
+    })
+
+    return () => {
+      authStateListener.subscription.unsubscribe()
+    }
   }, [router])
 
   const handleEmailAuth = async (e: React.FormEvent) => {

@@ -88,27 +88,39 @@ export function useAuthCheck() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    const hasAuthHash = typeof window !== 'undefined' && 
+      (window.location.hash.includes('access_token=') || window.location.hash.includes('refresh_token='))
+
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
+      if (!session && !hasAuthHash) {
         localStorage.removeItem('authToken')
         router.push('/auth')
-      } else {
+        setIsLoading(false)
+      } else if (session) {
         localStorage.setItem('authToken', session.access_token)
         setIsAuthenticated(true)
+        setIsLoading(false)
+        if (hasAuthHash && typeof window !== 'undefined') {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search)
+        }
       }
-      setIsLoading(false)
     }
 
     checkAuth()
 
     const { data: authStateListener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!session) {
-        localStorage.removeItem('authToken')
-        router.push('/auth')
-      } else {
+      if (session) {
         localStorage.setItem('authToken', session.access_token)
         setIsAuthenticated(true)
+        setIsLoading(false)
+        if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search)
+        }
+      } else if (event === 'SIGNED_OUT' || (!session && !hasAuthHash)) {
+        localStorage.removeItem('authToken')
+        router.push('/auth')
+        setIsLoading(false)
       }
     })
 
