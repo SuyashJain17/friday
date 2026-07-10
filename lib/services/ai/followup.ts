@@ -74,6 +74,7 @@ export async function streamFollowUpAsk(
     controller.enqueue(encodeChunk("\n<SOURCES>\n"));
     controller.enqueue(encodeChunk(sourcesJson));
     controller.enqueue(encodeChunk("\n<SOURCES>\n"));
+    controller.enqueue(encodeChunk(`\n<CONVERSATION_ID>\n${conversationId}\n<CONVERSATION_ID>\n`));
   });
 
   return createEventStreamResponse(stream);

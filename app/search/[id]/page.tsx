@@ -33,7 +33,10 @@ export default function SearchConversationPage() {
     followUps,
     isLoading: isStreaming,
     startStreaming,
+    resetStream,
   } = useStreaming({ query: followUpParam || '', conversationId })
+
+  const lastStreamedFollowUpRef = useRef<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -46,8 +49,29 @@ export default function SearchConversationPage() {
   }, [conversationId, isAuthLoading])
 
   useEffect(() => {
-    if (followUpParam && conversation) startStreaming()
-  }, [followUpParam, conversation])
+    if (!followUpParam) {
+      lastStreamedFollowUpRef.current = null
+      return
+    }
+    if (conversation && followUpParam !== lastStreamedFollowUpRef.current) {
+      lastStreamedFollowUpRef.current = followUpParam
+      startStreaming()
+    }
+  }, [followUpParam, conversation, startStreaming])
+
+  useEffect(() => {
+    if (!isStreaming && response && followUpParam) {
+      const reloadAndClean = async () => {
+        const data = await fetchConversation(conversationId, true)
+        if (data) {
+          setConversation(data)
+          resetStream()
+          router.replace(`/search/${conversationId}`, { scroll: false })
+        }
+      }
+      reloadAndClean()
+    }
+  }, [isStreaming, response, followUpParam, conversationId, resetStream, router])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -90,8 +114,8 @@ export default function SearchConversationPage() {
   }
 
   const messages: Message[] = conversation.messages || []
-  const activeSources = streamedSources.length > 0 
-    ? streamedSources 
+  const activeSources = streamedSources.length > 0
+    ? streamedSources
     : messages.slice().reverse().find(m => m.role === 'assistant' && m.sources && m.sources.length > 0)?.sources || []
 
   return (
@@ -100,7 +124,7 @@ export default function SearchConversationPage() {
 
       {/* 2-Column Perplexity Layout: Left Chat Stream + Right Side Separate Sources */}
       <div className="flex-1 w-full pl-6 md:pl-8 lg:pl-10 pr-0 py-10 flex flex-col lg:flex-row gap-10 lg:gap-12 items-start justify-between">
-        
+
         {/* Left Column: Entire Chat Stream — Enforced max-w-[680px] so question/answer area is NOT way too big! */}
         <div className="flex-1 w-full max-w-[680px] lg:mx-auto lg:translate-x-4 space-y-8">
           {messages.map((msg, idx) => {
@@ -255,7 +279,7 @@ export default function SearchConversationPage() {
             <SourcesList sources={activeSources} isLoading={isStreaming} layout="sidebar" />
           </div>
         )}
-        
+
         <div ref={bottomRef} />
       </div>
 

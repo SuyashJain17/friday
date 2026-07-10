@@ -243,9 +243,10 @@ export async function fetchConversations(forceRefresh = false) {
 /**
  * Fetch details of a single conversation
  */
-export async function fetchConversation(id: string) {
+export async function fetchConversation(id: string, forceRefresh = false) {
   try {
-    const response = await apiClient.get(`/api/conversations/${id}`, { baseURL: '' })
+    const url = forceRefresh ? `/api/conversations/${id}?_t=${Date.now()}` : `/api/conversations/${id}`
+    const response = await apiClient.get(url, { baseURL: '' })
     const conversation = response.data?.conversation
     if (conversation && Array.isArray(conversation.messages)) {
       conversation.messages = conversation.messages.map(parseMessageMetadata)

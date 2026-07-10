@@ -49,7 +49,12 @@ function SearchContent() {
   }, [newConversationId])
 
   const handleNewSearch = (newQuery: string) => {
-    if (newQuery.trim()) router.push(`/search?q=${encodeURIComponent(newQuery)}`)
+    if (!newQuery.trim()) return
+    if (conversationId) {
+      router.push(`/search/${conversationId}?followUp=${encodeURIComponent(newQuery)}`)
+    } else {
+      router.push(`/search?q=${encodeURIComponent(newQuery)}`)
+    }
   }
 
   const handleFollowUp = (q: string) => {

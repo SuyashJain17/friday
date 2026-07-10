@@ -19,6 +19,7 @@ interface UseStreamingReturn {
   isLoading: boolean
   error: string | null
   startStreaming: () => Promise<void>
+  resetStream: () => void
 }
 
 export function useStreaming({
@@ -71,6 +72,14 @@ export function useStreaming({
     }
   }, [query, conversationId])
 
+  const resetStream = useCallback(() => {
+    setResponse('')
+    setSources([])
+    setFollowUps([])
+    setError(null)
+    setIsLoading(false)
+  }, [])
+
   return {
     response,
     sources,
@@ -79,6 +88,7 @@ export function useStreaming({
     isLoading,
     error,
     startStreaming,
+    resetStream,
   }
 }
 
@@ -88,7 +98,7 @@ export function useAuthCheck() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const hasAuthHash = typeof window !== 'undefined' && 
+    const hasAuthHash = typeof window !== 'undefined' &&
       (window.location.hash.includes('access_token=') || window.location.hash.includes('refresh_token='))
 
     const checkAuth = async () => {

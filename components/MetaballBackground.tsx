@@ -945,9 +945,9 @@ export function MetaballBackground() {
       animationFrameId = requestAnimationFrame(render)
 
       const currentTime = performance.now()
-      const isTyping = typeof document !== 'undefined' && 
+      const isTyping = typeof document !== 'undefined' &&
         (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA')
-      
+
       // If user is actively typing, throttle 3D raymarching to ~15 FPS so UI/keyboard events get 100% thread priority
       if (isTyping && currentTime - lastRenderTime < 66) {
         return
