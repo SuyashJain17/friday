@@ -4,19 +4,17 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { SearchBar } from '@/components/SearchBar'
 import { useAuthCheck } from '@/lib/hooks'
-import { Globe, FileText, Layers, Lightbulb } from 'lucide-react'
 import { FridayLogo } from '@/components/FridayLogo'
 
 export default function Home() {
   const router = useRouter()
   const { isLoading: isAuthLoading } = useAuthCheck()
   const [isNavigating, setIsNavigating] = useState(false)
-  const [selectedMode, setSelectedMode] = useState('pro')
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
       setIsNavigating(true)
-      router.push(`/search?q=${encodeURIComponent(query)}&mode=${selectedMode}`)
+      router.push(`/search?q=${encodeURIComponent(query)}`)
     }
   }
 
@@ -33,10 +31,10 @@ export default function Home() {
 
       {/* Center content */}
       <div className="flex-1 flex flex-col items-center justify-center my-auto">
-        <div className="w-full max-w-3xl space-y-6 animate-in">
+        <div className="w-full max-w-2xl space-y-6 animate-in">
           {/* Headline */}
           <div className="text-center space-y-2 mb-4">
-            <h1 className="text-[clamp(3.5rem,8vw,6rem)] font-normal leading-tight tracking-tight text-white font-sans drop-shadow-lg">
+            <h1 className="text-[clamp(2.5rem,5vw,3.5rem)] font-normal leading-tight tracking-tight text-white font-sans drop-shadow-lg">
               Ask anything.
             </h1>
           </div>
@@ -52,32 +50,7 @@ export default function Home() {
             />
           </div>
 
-          {/* Search modes row */}
-          <div className="flex flex-wrap items-center justify-center gap-2.5 md:gap-3 pt-2">
-            {[
-              { id: 'pro', label: 'Pro Search', icon: Globe },
-              { id: 'research', label: 'Research', icon: FileText },
-              { id: 'deep', label: 'Deep Research', icon: Layers },
-              { id: 'reasoning', label: 'Reasoning', icon: Lightbulb },
-            ].map((mode) => {
-              const Icon = mode.icon
-              const isSelected = selectedMode === mode.id
-              return (
-                <button
-                  key={mode.id}
-                  onClick={() => setSelectedMode(mode.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs md:text-sm font-medium transition-all duration-200 cursor-pointer ${
-                    isSelected
-                      ? 'bg-primary/20 border border-primary/60 text-primary shadow-primary/30 scale-[1.03]'
-                      : 'bg-[#161616]/80 hover:bg-[#222]/90 border border-[#2a2a2a] hover:border-[#404040] text-[#ccc] hover:text-white shadow-sm'
-                  } backdrop-blur-md`}
-                >
-                  <Icon className={`w-3.5 h-3.5 md:w-4 md:h-4 ${isSelected ? 'text-primary' : 'text-[#888]'}`} />
-                  <span>{mode.label}</span>
-                </button>
-              )
-            })}
-          </div>
+
         </div>
       </div>
 

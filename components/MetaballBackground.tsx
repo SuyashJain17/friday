@@ -2,15 +2,13 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { Pane } from 'tweakpane'
 
 export function MetaballBackground() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const uiContainerRef = useRef<HTMLDivElement>(null)
   const [storyText, setStoryText] = useState<string>('')
 
   useEffect(() => {
-    if (!containerRef.current || !uiContainerRef.current) return
+    if (!containerRef.current) return
 
     // Enhanced device detection
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
@@ -779,12 +777,7 @@ export function MetaballBackground() {
     window.addEventListener('touchmove', handleTouchMove, { passive: true })
     window.addEventListener('resize', handleResize, { passive: true })
 
-    // Setup Tweakpane
-    const pane = new Pane({
-      container: uiContainerRef.current,
-      title: 'Metaball Controls',
-      expanded: false, // Collapsed by default so it doesn't obstruct UI
-    })
+
 
     const presetThemeColors: Record<string, string> = {
       moody: '#ffffff',
@@ -837,101 +830,7 @@ export function MetaballBackground() {
       material.uniforms.uCursorGlowColor.value = settings.cursorGlowColor
     }
 
-    pane
-      .addBinding(settings, 'preset', {
-        options: {
-          Moody: 'moody',
-          Cosmic: 'cosmic',
-          Minimal: 'minimal',
-          Vibrant: 'vibrant',
-          Neon: 'neon',
-          Sunset: 'sunset',
-          Midnight: 'midnight',
-          Toxic: 'toxic',
-          Pastel: 'pastel',
-          Psychedelic: 'dithered',
-          Holographic: 'holographic',
-        },
-      })
-      .on('change', (ev) => {
-        applyPreset(ev.value)
-        pane.refresh()
-      })
 
-    const metaballFolder = pane.addFolder({ title: 'Metaballs' })
-    metaballFolder
-      .addBinding(settings, 'fixedTopLeftRadius', { min: 0.2, max: 2.0, step: 0.01, label: 'Top Left Size' })
-      .on('change', (ev) => { material.uniforms.uFixedTopLeftRadius.value = ev.value })
-    metaballFolder
-      .addBinding(settings, 'fixedBottomRightRadius', { min: 0.2, max: 2.0, step: 0.01, label: 'Bottom Right Size' })
-      .on('change', (ev) => { material.uniforms.uFixedBottomRightRadius.value = ev.value })
-    metaballFolder
-      .addBinding(settings, 'smallTopLeftRadius', { min: 0.1, max: 0.8, step: 0.01, label: 'Small Top Left' })
-      .on('change', (ev) => { material.uniforms.uSmallTopLeftRadius.value = ev.value })
-    metaballFolder
-      .addBinding(settings, 'smallBottomRightRadius', { min: 0.1, max: 0.8, step: 0.01, label: 'Small Bottom Right' })
-      .on('change', (ev) => { material.uniforms.uSmallBottomRightRadius.value = ev.value })
-    metaballFolder
-      .addBinding(settings, 'sphereCount', { min: 2, max: 10, step: 1, label: 'Moving Count' })
-      .on('change', (ev) => { material.uniforms.uSphereCount.value = ev.value })
-    metaballFolder
-      .addBinding(settings, 'smoothness', { min: 0.1, max: 1.0, step: 0.01, label: 'Blend Smoothness' })
-      .on('change', (ev) => { material.uniforms.uSmoothness.value = ev.value })
-
-    const mouseFolder = pane.addFolder({ title: 'Mouse Interaction' })
-    mouseFolder
-      .addBinding(settings, 'mouseProximityEffect')
-      .on('change', (ev) => { material.uniforms.uMouseProximityEffect.value = ev.value })
-    mouseFolder
-      .addBinding(settings, 'minMovementScale', { min: 0.1, max: 1.0, step: 0.05 })
-      .on('change', (ev) => { material.uniforms.uMinMovementScale.value = ev.value })
-    mouseFolder
-      .addBinding(settings, 'maxMovementScale', { min: 0.5, max: 2.0, step: 0.05 })
-      .on('change', (ev) => { material.uniforms.uMaxMovementScale.value = ev.value })
-    mouseFolder.addBinding(settings, 'mouseSmoothness', { min: 0.01, max: 0.2, step: 0.01, label: 'Mouse Smoothness' })
-
-    const cursorFolder = pane.addFolder({ title: 'Cursor' })
-    cursorFolder.addBinding(settings, 'cursorRadiusMin', { min: 0.05, max: 0.2, step: 0.01, label: 'Min Radius' })
-    cursorFolder.addBinding(settings, 'cursorRadiusMax', { min: 0.1, max: 0.25, step: 0.01, label: 'Max Radius' })
-
-    const animationFolder = pane.addFolder({ title: 'Animation' })
-    animationFolder
-      .addBinding(settings, 'animationSpeed', { min: 0.1, max: 3.0, step: 0.1 })
-      .on('change', (ev) => { material.uniforms.uAnimationSpeed.value = ev.value })
-    animationFolder
-      .addBinding(settings, 'movementScale', { min: 0.5, max: 2.0, step: 0.1 })
-      .on('change', (ev) => { material.uniforms.uMovementScale.value = ev.value })
-
-    const lightingFolder = pane.addFolder({ title: 'Lighting' })
-    lightingFolder
-      .addBinding(settings, 'ambientIntensity', { min: 0, max: 0.5, step: 0.01 })
-      .on('change', (ev) => { material.uniforms.uAmbientIntensity.value = ev.value })
-    lightingFolder
-      .addBinding(settings, 'diffuseIntensity', { min: 0, max: 1.0, step: 0.01 })
-      .on('change', (ev) => { material.uniforms.uDiffuseIntensity.value = ev.value })
-    lightingFolder
-      .addBinding(settings, 'specularIntensity', { min: 0, max: 2.0, step: 0.01 })
-      .on('change', (ev) => { material.uniforms.uSpecularIntensity.value = ev.value })
-    lightingFolder
-      .addBinding(settings, 'specularPower', { min: 1, max: 64, step: 1 })
-      .on('change', (ev) => { material.uniforms.uSpecularPower.value = ev.value })
-    lightingFolder
-      .addBinding(settings, 'fresnelPower', { min: 1, max: 5, step: 0.1 })
-      .on('change', (ev) => { material.uniforms.uFresnelPower.value = ev.value })
-    lightingFolder
-      .addBinding(settings, 'contrast', { min: 0.5, max: 2.0, step: 0.1 })
-      .on('change', (ev) => { material.uniforms.uContrast.value = ev.value })
-
-    const glowFolder = pane.addFolder({ title: 'Cursor Glow' })
-    glowFolder
-      .addBinding(settings, 'cursorGlowIntensity', { min: 0, max: 2.0, step: 0.1 })
-      .on('change', (ev) => { material.uniforms.uCursorGlowIntensity.value = ev.value })
-    glowFolder
-      .addBinding(settings, 'cursorGlowRadius', { min: 0.5, max: 3.0, step: 0.1 })
-      .on('change', (ev) => { material.uniforms.uCursorGlowRadius.value = ev.value })
-    glowFolder
-      .addBinding(settings, 'fogDensity', { min: 0, max: 0.5, step: 0.01 })
-      .on('change', (ev) => { material.uniforms.uFogDensity.value = ev.value })
 
     applyPreset(settings.preset)
 
@@ -994,7 +893,6 @@ export function MetaballBackground() {
       window.removeEventListener('touchstart', handleTouchStart)
       window.removeEventListener('touchmove', handleTouchMove)
       window.removeEventListener('resize', handleResize)
-      pane.dispose()
       renderer.dispose()
       material.dispose()
       geometry.dispose()
@@ -1011,15 +909,8 @@ export function MetaballBackground() {
         ref={containerRef}
         id="container"
         className="fixed inset-0 w-screen h-screen z-0 pointer-events-none"
-        style={{ background: '#0f0f0f' }}
       />
 
-      {/* Tweakpane UI Container */}
-      <div
-        ref={uiContainerRef}
-        id="ui-container"
-        className="fixed top-3 right-3 z-50 opacity-80 hover:opacity-100 transition-opacity duration-300 pointer-events-auto"
-      />
 
       {/* Sci-fi Coordinates / Story Text */}
       {storyText && (

@@ -40,14 +40,14 @@ export const SearchBar = React.memo(function SearchBar({
       <form onSubmit={handleSubmit}>
         {/* Pill-shaped elevated glassmorphic search bar */}
         <div
-          className={`flex items-center gap-3 px-5 py-2.5 rounded-full transition-all duration-300 shadow-2xl border ${
+          className={`flex items-center gap-3 px-4 py-1.5 rounded-full transition-all duration-300 shadow-2xl border ${
             isFocused
               ? 'bg-[#161616]/95 border-primary/60 shadow-primary/20 scale-[1.01]'
               : 'bg-[#121212]/85 border-[#2a2a2a] hover:border-[#404040]'
           } backdrop-blur-xl`}
         >
           {/* Search Icon on left */}
-          <Search className="w-5 h-5 text-[#888] shrink-0" />
+          <Search className="w-4.5 h-4.5 text-[#888] shrink-0 ml-1" />
 
           {/* Input */}
           <input
@@ -60,7 +60,7 @@ export const SearchBar = React.memo(function SearchBar({
             placeholder={placeholder}
             disabled={isLoading}
             autoComplete="off"
-            className="flex-1 bg-transparent outline-none text-white placeholder:text-[#777] text-base md:text-lg font-light leading-normal disabled:opacity-40 py-1"
+            className="flex-1 bg-transparent outline-none text-white placeholder:text-[#777] text-[15px] font-light leading-normal disabled:opacity-40 py-1"
           />
 
           {/* Submit button — Circular button matching theme color! Always enabled! */}
@@ -68,12 +68,12 @@ export const SearchBar = React.memo(function SearchBar({
             type="submit"
             disabled={isLoading}
             aria-label="Search"
-            className="w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all duration-200 shrink-0 bg-primary hover:bg-primary/90 text-black shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-9 h-9 rounded-full flex items-center justify-center font-bold transition-all duration-200 shrink-0 bg-primary hover:bg-primary/90 text-black shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
             ) : (
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-4 h-4" />
             )}
           </button>
         </div>
