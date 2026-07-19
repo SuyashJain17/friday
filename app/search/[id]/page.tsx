@@ -119,7 +119,9 @@ export default function SearchConversationPage() {
     : messages.slice().reverse().find(m => m.role === 'assistant' && m.sources && m.sources.length > 0)?.sources || []
 
   return (
-    <div className="flex-1 flex flex-col justify-between min-h-full bg-transparent">
+    <>
+      <div className="fixed inset-0 -z-10 bg-black/40 backdrop-blur-md pointer-events-none" />
+      <div className="flex-1 flex flex-col justify-between min-h-full bg-transparent">
 
 
       {/* 2-Column Perplexity Layout: Left Chat Stream + Right Side Separate Sources */}
@@ -275,7 +277,7 @@ export default function SearchConversationPage() {
 
         {/* Right Column: Compact scrollable sources panel like Perplexity */}
         {activeSources.length > 0 && (
-          <div className="w-full lg:w-[310px] shrink-0 lg:sticky lg:top-24 lg:ml-auto lg:-translate-x-5 lg:-translate-y-2.5">
+          <div className="w-full lg:w-[310px] shrink-0 lg:sticky lg:top-24 lg:ml-auto lg:translate-x-4 lg:-translate-y-2.5">
             <SourcesList sources={activeSources} isLoading={isStreaming} layout="sidebar" />
           </div>
         )}
@@ -295,5 +297,6 @@ export default function SearchConversationPage() {
         </div>
       </div>
     </div>
+    </>
   )
 }

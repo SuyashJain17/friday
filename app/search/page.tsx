@@ -67,7 +67,9 @@ function SearchContent() {
 
 
   return (
-    <div className="flex-1 flex flex-col justify-between min-h-full">
+    <>
+      <div className="fixed inset-0 -z-10 bg-black/40 backdrop-blur-md pointer-events-none" />
+      <div className="flex-1 flex flex-col justify-between min-h-full bg-transparent">
       {/* 2-Column Perplexity Layout: Left Chat Stream + Right Side Separate Sources */}
       <div className="flex-1 w-full pl-6 md:pl-8 lg:pl-10 pr-0 py-8 flex flex-col lg:flex-row gap-10 lg:gap-12 items-start justify-between">
         {/* Left Column: Chat Stream — Enforced max-w-[680px] so question/answer area is NOT way too big! */}
@@ -167,6 +169,7 @@ function SearchContent() {
         </div>
       </div>
     </div>
+    </>
   )
 }
 

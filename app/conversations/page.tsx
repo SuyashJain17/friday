@@ -34,7 +34,9 @@ export default function ConversationsPage() {
   }
 
   return (
-    <div className="flex-1 flex flex-col min-h-full bg-transparent p-6 md:p-12">
+    <>
+      <div className="fixed inset-0 -z-10 bg-black/40 backdrop-blur-md pointer-events-none" />
+      <div className="flex-1 flex flex-col min-h-full bg-transparent p-6 md:p-12">
       {/* Content */}
       <div className="max-w-4xl w-full mx-auto space-y-8">
         <div>
@@ -147,5 +149,6 @@ export default function ConversationsPage() {
         )}
       </div>
     </div>
+    </>
   )
 }
