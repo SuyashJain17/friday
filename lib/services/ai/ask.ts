@@ -60,7 +60,7 @@ export async function streamInitialAsk(query: string, userId: string): Promise<R
 
     await prisma.message.create({
       data: {
-        content: fullResponse + `\n<SOURCES>\n${sourcesJson}\n<SOURCES>\n`,
+        content: fullResponse + `\n<SOURCES>\n${sourcesJson}\n</SOURCES>\n`,
         role: "Assistance",
         conversationId: conversation.id,
       },
@@ -68,11 +68,11 @@ export async function streamInitialAsk(query: string, userId: string): Promise<R
 
     controller.enqueue(encodeChunk("\n<SOURCES>\n"));
     controller.enqueue(encodeChunk(sourcesJson));
-    controller.enqueue(encodeChunk("\n<SOURCES>\n"));
+    controller.enqueue(encodeChunk("\n</SOURCES>\n"));
 
     controller.enqueue(encodeChunk("\n<CONVERSATION_ID>\n"));
     controller.enqueue(encodeChunk(conversation.id));
-    controller.enqueue(encodeChunk("\n<CONVERSATION_ID>\n"));
+    controller.enqueue(encodeChunk("\n</CONVERSATION_ID>\n"));
   });
 
   return createEventStreamResponse(stream);
