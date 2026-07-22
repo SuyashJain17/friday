@@ -5,21 +5,27 @@ import { prisma } from "../../db";
  * Exactly preserves the query structure and ordering of the original Express implementation.
  */
 export async function getUserConversations(userId: string) {
-  return prisma.conversation.findMany({
+  const conversations = await prisma.conversation.findMany({
     where: { userId },
-    orderBy: { id: "desc" },
-    take: 50,
     select: {
       id: true,
       title: true,
       slug: true,
       messages: {
         take: 1,
-        orderBy: { createdAt: "asc" },
+        orderBy: { createdAt: "desc" },
         select: { content: true, createdAt: true },
       },
     },
   });
+
+  return conversations
+    .sort((a, b) => {
+      const timeA = a.messages[0]?.createdAt?.getTime() || 0;
+      const timeB = b.messages[0]?.createdAt?.getTime() || 0;
+      return timeB - timeA;
+    })
+    .slice(0, 50);
 }
 
 /**

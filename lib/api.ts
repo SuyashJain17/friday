@@ -30,8 +30,8 @@ interface StreamTextOptions {
 export function cleanMessageContent(content: string): string {
   if (!content) return ''
   let text = content
-  text = text.replace(/<SOURCES>[\s\S]*?(?:<SOURCES>|$)/g, '')
-  text = text.replace(/<CONVERSATION_ID>[\s\S]*?(?:<CONVERSATION_ID>|$)/g, '')
+  text = text.replace(/<SOURCES>[\s\S]*?(?:<\/SOURCES>|$)/g, '')
+  text = text.replace(/<CONVERSATION_ID>[\s\S]*?(?:<\/CONVERSATION_ID>|$)/g, '')
   text = text.replace(/<FOLLOW_UPS>[\s\S]*?(?:<\/FOLLOW_UPS>|$)/g, '')
   
   const start = text.indexOf('<ANSWER>')
@@ -94,7 +94,7 @@ export async function* streamSearch({
 
       // 1. Check Sources
       if (!yieldedSources) {
-        const sourcesMatch = buffer.match(/<SOURCES>\s*([\s\S]*?)\s*<SOURCES>/)
+        const sourcesMatch = buffer.match(/<SOURCES>\s*([\s\S]*?)\s*<\/SOURCES>/)
         if (sourcesMatch) {
           yield { type: 'sources', data: sourcesMatch[1].trim() }
           yieldedSources = true
@@ -103,7 +103,7 @@ export async function* streamSearch({
 
       // 2. Check Conversation ID
       if (!yieldedConvoId) {
-        const convoMatch = buffer.match(/<CONVERSATION_ID>\s*([\s\S]*?)\s*<CONVERSATION_ID>/)
+        const convoMatch = buffer.match(/<CONVERSATION_ID>\s*([\s\S]*?)\s*<\/CONVERSATION_ID>/)
         if (convoMatch) {
           yield { type: 'conversation_id', data: convoMatch[1].trim() }
           yieldedConvoId = true
@@ -126,8 +126,8 @@ export async function* streamSearch({
 
       // 4. Extract Answer Text
       let rawAnswer = buffer
-      rawAnswer = rawAnswer.replace(/<SOURCES>[\s\S]*?(?:<SOURCES>|$)/g, '')
-      rawAnswer = rawAnswer.replace(/<CONVERSATION_ID>[\s\S]*?(?:<CONVERSATION_ID>|$)/g, '')
+      rawAnswer = rawAnswer.replace(/<SOURCES>[\s\S]*?(?:<\/SOURCES>|$)/g, '')
+      rawAnswer = rawAnswer.replace(/<CONVERSATION_ID>[\s\S]*?(?:<\/CONVERSATION_ID>|$)/g, '')
       rawAnswer = rawAnswer.replace(/<FOLLOW_UPS>[\s\S]*?(?:<\/FOLLOW_UPS>|$)/g, '')
 
       const answerStart = rawAnswer.indexOf('<ANSWER>')
@@ -167,7 +167,7 @@ function parseMessageMetadata(m: any) {
   let sources = []
   let followUps: string[] = []
   if (m.content) {
-    const sourcesMatch = m.content.match(/<SOURCES>\s*([\s\S]*?)\s*<SOURCES>/)
+    const sourcesMatch = m.content.match(/<SOURCES>\s*([\s\S]*?)\s*<\/SOURCES>/)
     if (sourcesMatch) {
       try { sources = JSON.parse(sourcesMatch[1].trim()) } catch (e) {}
     }
